@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbot
+spec:
+  selector:
+    matchLabels:
+      app: cbot # has to match .spec.template.metadata.labels
+  strategy:
+    # Specifies the strategy used to replace old Pods by new ones
+    # Refer: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cbot # Has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: cbot
+        image: docker.auroville.org.in/cbot:latest
+        envFrom:
+          - secretRef:
+              name: cbot-secret

@@ -1,0 +1,50 @@
+name: Manual Deployment to Production
+on:
+  workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+    - uses: Azure/docker-login@v1
+      with:
+        login-server: docker.auroville.org.in
+        username: ${{ secrets.REGISTRY_61_USERNAME }}
+        password: ${{ secrets.REGISTRY_61_PASSWORD }}
+
+    - run: |
+        docker build . -t docker.auroville.org.in/cbot:${{ github.sha }}
+        docker push docker.auroville.org.in/cbot:${{ github.sha }}
+    - uses: Azure/k8s-set-context@v1
+      with:
+        method:  service-account
+        k8s-url:  ${{ secrets.K8S_61_URL }}
+        k8s-secret: ${{ secrets.K8S_61_SERVICE_ACCOUNT_SECRET }}
+        id:  setcontext
+
+    - uses: Azure/k8s-create-secret@v1
+      with:
+        secret-name: talam-docker-registry-secret
+        container-registry-url: docker.auroville.org.in
+        container-registry-username: ${{ secrets.REGISTRY_61_USERNAME }}
+        container-registry-password: ${{ secrets.REGISTRY_61_PASSWORD }}
+
+
+    - uses: Azure/k8s-create-secret@v1
+      with:
+        secret-type: 'generic'
+        namespace: 'default'
+        secret-name: cbot-secret
+        arguments: --from-literal=DATABASE_URL=${{ secrets.DATABASE_URL_61 }} --from-literal=APP_BASE_DOMAIN=${{ secrets.APP_BASE_DOMAIN }} --from-literal=APP_DOMAIN=${{ secrets.APP_DOMAIN }}  --from-literal=SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }} --from-literal=AWS_SES_ACCESS_KEY=${{ secrets.AWS_SES_ACCESS_KEY }} --from-literal=AWS_SES_SECRET=${{ secrets.AWS_SES_SECRET }}
+
+    - uses: Azure/k8s-deploy@v1
+      with:
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+          manifests/ingress.yml
+        images: |
+          docker.auroville.org.in/cbot:${{ github.sha }}
+        imagepullsecrets: |
+          talam-docker-registry-secret

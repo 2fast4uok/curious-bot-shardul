@@ -1,0 +1,14 @@
+<div>
+  <p>Dear Talam</p>
+
+  <p><strong>Name:</strong> <%= @contact["first_name"] %> <%= @contact["last_name"] %></p>
+  <p><strong>Email:</strong> <%= @contact["email"] %></p>
+  <p>
+    <%= @contact["message"] %>
+  </p>
+
+  <p>Thank you,</p>
+
+  <p>Sincerely,</p>
+  <%= @contact["first_name"] %>
+</div>

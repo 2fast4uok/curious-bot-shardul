@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: cbot-prod
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+spec:
+  tls:
+  - hosts:
+    - curiousbot.org
+    secretName: cbot-prod-tls
+  rules:
+  - host: curiousbot.org
+    http:
+      paths:
+      - backend:
+          serviceName: cbot
+          servicePort: 4000
